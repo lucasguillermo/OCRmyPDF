@@ -13,11 +13,11 @@ class HocrTextElement():
 	http://docs.google.com/View?docid=dfxcv4vc_67g844kf
 	"""
 	
-	# initialize the character categories
+	# initialize the character categories assuming helvetica font
 	cat1=HocrCharsCategory(u"acemnorsuvwxz:", 0, 0.5)
 	cat2=HocrCharsCategory(u"bdfhikltABCDEFGHIJLKMNOPQRSTUVWXYZâàéèêîôù0123456789!/%?\ß€#", 0, 0.75)
 	cat3=HocrCharsCategory(u"gpqyµ", -0.25, 0.75)
-	cat4=HocrCharsCategory(u"j§{([)]}|@", -0.25, 1)
+	cat4=HocrCharsCategory(u"j§{([)]}|@", -0.25, 0.75)
 	cat5=HocrCharsCategory(u"üöä", 0, 0.7)
 	cat6=HocrCharsCategory(u"ÉÈÊÔÎ", 0, 1)
 	cat7=HocrCharsCategory(u",", -0.15, 0.05)
@@ -42,17 +42,19 @@ class HocrTextElement():
 		lowBound=boundaries[0]
 		highBound=boundaries[1]
 		
-		# set font size
+		# Compute font size
+		# fine tune according to the characters contained in the current text element
 		fontsize=abs(self.y2 - self.y1) / abs(highBound-lowBound)
 		text.setFont(self.fontname, fontsize)
 		
-		# set cursor to bottom left corner of bbox (adjust for dpi)
+		# Set cursor to bottom left corner of bbox
+		# fine tune according to the characters contained in the current text element
 		text.setTextOrigin(self.x1, self.y1 - lowBound * fontsize)
 
-		# scale the width of the text to fill accurately the width of the bbox
+		# Scale the width of the text to fill accurately the width of the bbox
 		text.setHorizScale(100*(self.x2-self.x1)/self.pdf.stringWidth(self.textClean, self.fontname, fontsize))
 
-		# write the text to the page
+		# Write the text into the text element
 		text.textLine(self.textClean)
 	
 		return text
