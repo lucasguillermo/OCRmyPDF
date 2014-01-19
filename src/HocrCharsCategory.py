@@ -7,6 +7,7 @@ class HocrCharsCategory():
 	"""
 	TODO
 	"""
+	# char list, lower boundary, upper boundary
 	def __init__(self, charsstring, low, high):
 		self.chars=charsstring
 		self.low=low
