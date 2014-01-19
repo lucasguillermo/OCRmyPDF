@@ -13,6 +13,7 @@ from lxml import etree as ElementTree
 from PIL import Image
 import re, sys
 import argparse
+from HocrTextElement import HocrTextElement
 
 
 def monkeypatch_method(cls):
@@ -152,7 +153,7 @@ class hocrTransform():
 		if element.tail is not None:
 			text = text + element.tail
 		return text
-
+		
 	def element_coordinates(self, element):
 		"""
 		Returns a tuple containing the coordinates of the bounding box around
@@ -171,26 +172,15 @@ class hocrTransform():
 		Returns the length in pt given length in pxl
 		"""
 		return float(pxl)/self.dpi*inch
-
-	def replace_unsupported_chars(self, str):
-		"""
-		Given an input string, returns the corresponding string that:
-		- is available in the helvetica facetype
-		- does not contain any ligature (to allow easy search in the PDF file)
-		"""		
-		# The 'u' before the character to replace indicates that it is a unicode character
-		str=str.replace(u"ﬂ","fl")
-		str=str.replace(u"ﬁ","fi")
-		return str
 		
-	def to_pdf(self, outFileName, imageFileName, showBoundingboxes, fontname="Helvetica"):
+	def to_pdf(self, outFileName, imageFileName, showBoundingboxes):
 		"""
 		Creates a PDF file with an image superimposed on top of the text.
 		Text is positioned according to the bounding box of the lines in
 		the hOCR file.
-		The image need not be identical to the image used to create the hOCR file.
+		The image does not need to be identical to the image used to create the hOCR file.
 		It can have a lower resolution, different color mode, etc.
-		"""
+		"""		
 		# create the PDF file
 		pdf = Canvas(outFileName, pagesize=(self.width, self.height), pageCompression=1) # page size in points (1/72 in.)
 
@@ -203,7 +193,7 @@ class hocrTransform():
 			elemtxt=self._get_element_text(elem).rstrip()
 			if len(elemtxt) == 0:
 				continue
-
+		
 			coords = self.element_coordinates(elem)
 			x1=self.px2pt(coords[0])
 			y1=self.px2pt(coords[1])
@@ -221,7 +211,7 @@ class hocrTransform():
 		if self.hocr.find(".//%sspan[@class='ocrx_word']" %(self.xmlns)) is not None:
 			elemclass="ocrx_word"
 
-		# itterate all text elements
+		# iterate all text elements
 		pdf.setStrokeColorRGB(1,0,0)	# light green for bounding box of word/line
 		pdf.setLineWidth(0.5)		# bounding box line width
 		pdf.setDash(6,3)		# bounding box is dashed
@@ -229,9 +219,6 @@ class hocrTransform():
 		for elem in self.hocr.findall(".//%sspan[@class='%s']" % (self.xmlns, elemclass)):
 
 			elemtxt=self._get_element_text(elem).rstrip()
-			
-			elemtxt=self.replace_unsupported_chars(elemtxt)
-			
 			if len(elemtxt) == 0:
 				continue
 
@@ -243,22 +230,12 @@ class hocrTransform():
 
 			# draw the bbox border
 			if showBoundingboxes == True:
-				pdf.rect(x1, self.height-y2, x2-x1, y2-y1, fill=0)
-
-			text = pdf.beginText()
-			fontsize=self.px2pt(coords[3]-coords[1])
-			text.setFont(fontname, fontsize)
-
-			# set cursor to bottom left corner of bbox (adjust for dpi)
-			text.setTextOrigin(x1, self.height-y2)
-
-			# scale the width of the text to fill the width of the bbox
-			text.setHorizScale(100*(x2-x1)/pdf.stringWidth(elemtxt, fontname, fontsize))
-
-			# write the text to the page
-			text.textLine(elemtxt)
-			pdf.drawText(text)
-
+				pdf.rect(x1, self.height-y2, x2-x1, y2-y1, fill=0)			
+			
+			# draw text
+			pdftext=HocrTextElement(pdf, elemtxt, x1, self.height-y2, x2, self.height-y1)
+			pdf.drawText(pdftext.getText())
+			
 		# put the image on the page, scaled to fill the page
 		if imageFileName != None:
 			im = Image.open(imageFileName)
