@@ -21,9 +21,3 @@ class HocrCharsCategory():
 	
 	def hasCharFromCategory(self, text):
 		return any(i in text for i in self.chars)
-		
-	def getNewBoundaries(self, text, boundaries):
-		if self.hasCharFromCategory(text):
-			return (min(self.low, boundaries[0]), max(self.high,boundaries[1]))
-		else:
-			return boundaries

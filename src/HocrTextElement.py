@@ -14,14 +14,14 @@ class HocrTextElement():
 	"""
 	
 	# initialize the character categories assuming helvetica font
-	cat1=HocrCharsCategory(u"acemnorsuvwxz:", 0, 0.5)
-	cat2=HocrCharsCategory(u"bdfhikltABCDEFGHIJLKMNOPQRSTUVWXYZâàéèêîôù0123456789!/%?\ß€#", 0, 0.75)
-	cat3=HocrCharsCategory(u"gpqyµ", -0.25, 0.75)
-	cat4=HocrCharsCategory(u"j§{([)]}|@", -0.25, 0.75)
-	cat5=HocrCharsCategory(u"üöä", 0, 0.7)
-	cat6=HocrCharsCategory(u"ÉÈÊÔÎ", 0, 1)
-	cat7=HocrCharsCategory(u",", -0.15, 0.05)
-	
+	hocrCharsCategories=[HocrCharsCategory(u"acemnorsuvwxz:", 0, 0.55), 
+				HocrCharsCategory(u"bdfhikltABCDEFGHIJLKMNOPQRSTUVWXYZâàéèêîôù0123456789!/%?\ß€#", 0, 0.75),
+				HocrCharsCategory(u"gpqyµ", -0.25, 0.55),
+				HocrCharsCategory(u"j§{([)]}|@", -0.25, 0.75),
+				HocrCharsCategory(u"üöä", 0, 0.7),
+				HocrCharsCategory(u"ÉÈÊÔÎ", 0, 1),
+				HocrCharsCategory(u",", -0.15, 0.05)]
+				
 	
 	def __init__(self, pdf, text, x1, y1, x2, y2):
 		self.fontname="Helvetica"
@@ -33,15 +33,17 @@ class HocrTextElement():
 		self.textClean = HocrTextElement.cleanText(text)
 		
 	def getText(self):
-		text = self.pdf.beginText()
-
 		# Compute string vertical boundaries
+		allCharsUnknown=1
 		lowBound=+0.5
 		highBound=-0.5
-		boundaries=HocrTextElement.cat7.getNewBoundaries(self.textClean, HocrTextElement.cat4.getNewBoundaries(self.textClean, HocrTextElement.cat3.getNewBoundaries(self.textClean, HocrTextElement.cat2.getNewBoundaries(self.textClean,HocrTextElement.cat1.getNewBoundaries(self.textClean,(lowBound, highBound))))))
-		lowBound=boundaries[0]
-		highBound=boundaries[1]
-		
+		for cat in HocrTextElement.hocrCharsCategories:
+			if cat.hasCharFromCategory(self.textClean):
+				allCharsUnknown=0
+				lowBound=min(cat.getLow(), lowBound)
+				highBound=max(cat.getHigh(), highBound)
+				
+		text = self.pdf.beginText()				
 		# Compute font size
 		# fine tune according to the characters contained in the current text element
 		fontsize=abs(self.y2 - self.y1) / abs(highBound-lowBound)
