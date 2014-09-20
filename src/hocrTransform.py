@@ -15,7 +15,6 @@ import re, sys
 import argparse
 from HocrTextElement import HocrTextElement
 
-
 def monkeypatch_method(cls):
 	'''
 	Override a class method at runtime.
@@ -48,8 +47,13 @@ def PIL_imagedata(self):
 
 	from reportlab.lib.utils import import_zlib
 	from reportlab import rl_config
-	from reportlab.pdfbase.pdfutils import _AsciiBase85Encode, _chunker
-
+	from reportlab.pdfbase.pdfutils import _chunker
+	# in order to support both newer and older versions of reportlab
+	try:
+	    from reportlab.pdfbase.pdfutils import _AsciiBase85Encode
+	except ImportError:
+	    from reportlab.pdfbase.pdfutils import asciiBase85Encode as _AsciiBase85Encode
+	
 	self.source = 'PIL'
 	zlib = import_zlib()
 	if not zlib:
